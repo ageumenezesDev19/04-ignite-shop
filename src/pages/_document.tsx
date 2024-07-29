@@ -2,11 +2,6 @@ import { getCssText } from "@/styles";
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
-  const bodyStyle = {
-    background: 'black',
-    color: 'white'
-  }
-
   return (
     <Html lang="en">
       <Head />
@@ -15,7 +10,7 @@ export default function Document() {
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
 
         <style id="stitches" dangerouslySetInnerHTML={{ __html: getCssText() }} /> 
-      <body style={bodyStyle}>
+      <body>
         <Main />
         <NextScript />
       </body>
