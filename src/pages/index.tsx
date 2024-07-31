@@ -30,7 +30,9 @@ export default function Home({ products }: ProductsProps) {
           <Image src={product.imageURL} width={520} height={480} alt={product.name} />
           <footer>
             <strong>{product.name}</strong>
-            <span>{product.price !== null ? `R$ ${product.price.toFixed(2)}` : 'Preço não disponível'}</span>
+            <span>{product.price !== null
+              ? `R$ ${product.price.toFixed(2)}`
+              : 'Preço não disponível'}</span>
           </footer>
         </Product>
       ))}
