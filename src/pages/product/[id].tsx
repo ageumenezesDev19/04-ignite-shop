@@ -1,22 +1,76 @@
-import { ImageContainer, ProductContainer, ProductDetails } from "@/styles/pages/product"
-import { useRouter } from "next/router"
+import { stripe } from "@/lib/stripe";
+import { ImageContainer, ProductContainer, ProductDetails } from "@/styles/pages/product";
+import { GetStaticPaths, GetStaticProps } from "next";
+import Stripe from "stripe";
 
-export default function Product() {
-  const { query } = useRouter()
+interface ProductProps {
+  product: {
+    id: string;
+    name: string;
+    imageURL: string;
+    price: string | null;
+    description: string;
+  }
+}
 
-  return(
+export default function Product({ product }: ProductProps) {
+  return (
     <ProductContainer>
-      <ImageContainer></ImageContainer>
+      <ImageContainer>
+        <img src={product.imageURL} width={520} height={480} alt={product.name} />
+      </ImageContainer>
+
       <ProductDetails>
-        <h1>Camiseta X</h1>
-        <span>R$ 79,90</span>
-
-        <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Cum nihil quis assumenda eius ducimus rerum, quidem, minima sequi voluptas fugiat perferendis soluta est esse possimus, sapiente doloribus veniam omnis repellat.</p>
-
-        <button>
-          Compar agora
-        </button>
+        <h1>{product.name}</h1>
+        <span>
+          {product.price !== null
+            ? `R$ ${product.price}`
+            : 'Preço não disponível'}
+        </span>
+        <p>{product.description}</p>
+        <button>Comprar agora</button>
       </ProductDetails>
     </ProductContainer>
-  )
+  );
 }
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const response = await stripe.products.list();
+  const paths = response.data.map(product => ({
+    params: { id: product.id }
+  }));
+
+  return {
+    paths,
+    fallback: 'blocking', // Use 'blocking' to wait for the page to be generated if it doesn't exist yet
+  };
+};
+
+export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ params }) => {
+  if (!params?.id) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const productId = params.id;
+
+  const product = await stripe.products.retrieve(productId, {
+    expand: ['default_price'],
+  });
+
+  const price = product.default_price as Stripe.Price;
+
+  return {
+    props: {
+      product: {
+        id: product.id,
+        name: product.name,
+        imageURL: product.images[0] ?? '',
+        price: price.unit_amount !== null ? (price.unit_amount / 100).toFixed(2) : null,
+        description: product.description ?? 'Descrição não disponível.',
+      }
+    },
+    revalidate: 60 * 60 * 1, // 1 hour
+  };
+};

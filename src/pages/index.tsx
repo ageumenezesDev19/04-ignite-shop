@@ -3,7 +3,7 @@ import { useKeenSlider } from 'keen-slider/react';
 import Image from "next/image";
 import 'keen-slider/keen-slider.min.css';
 import { stripe } from "@/lib/stripe";
-import { GetServerSideProps } from "next";
+import { GetStaticProps } from "next";
 import Stripe from "stripe";
 import Link from "next/link";
 
@@ -12,7 +12,7 @@ interface ProductsProps {
     id: string;
     name: string;
     imageURL: string;
-    price: number | null;
+    price: string;
   }[]
 }
 
@@ -39,7 +39,7 @@ export default function Home({ products }: ProductsProps) {
               <strong>{product.name}</strong>
               <span>
                 {product.price !== null
-                  ? `R$ ${product.price.toFixed(2)}`
+                  ? `R$ ${product.price}`
                   : 'Preço não disponível'}
               </span>
             </footer>
@@ -50,7 +50,7 @@ export default function Home({ products }: ProductsProps) {
   );
 }
 
-export const getStaticProps: GetServerSideProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
   const response  = await stripe.products.list({
     expand: ['data.default_price']
   });
@@ -62,7 +62,9 @@ export const getStaticProps: GetServerSideProps = async () => {
       id: product.id,
       name: product.name,
       imageURL: product.images[0] ?? '',
-      price: price.unit_amount !== null ? price.unit_amount / 100 : null,
+      price: price.unit_amount !== null
+        ? (price.unit_amount / 100).toFixed(2)
+        : null,
     }
   });
 
@@ -70,6 +72,6 @@ export const getStaticProps: GetServerSideProps = async () => {
     props: {
       products
     },
-    // revalidate: 60 * 60 * 2, // 2 hours
+    revalidate: 60 * 60 * 2, // 2 hours
   };
 };
