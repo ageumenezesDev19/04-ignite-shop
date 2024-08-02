@@ -5,6 +5,7 @@ import { stripe } from "@/lib/stripe";
 import { GetStaticProps } from "next";
 import Stripe from "stripe";
 import Link from "next/link";
+import Head from "next/head";
 // import { useState } from "react";
 import Image from "next/image";
 // import Skeleton from "react-loading-skeleton";
@@ -29,44 +30,49 @@ export default function Home({ products }: ProductsProps) {
   // const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <HomeContainer ref={sliderRef} className="keen-slider">
-      {/* {!imageLoaded && (
-        <Skeleton
-          width={520}
-          height={655}
-          style={{
-            background: 'linear-gradient(100deg, #1ea483 0%, #7465d4 100%)',
-            borderRadius: '8px'
-          }}
-        />
-      )
-      } */}
-      {products.map((product) => (
-        <Link key={product.id} href={`/product/${product.id}`} prefetch={false}>
-          <Product className="keen-slider__slide">
-            <Image
-              src={product.imageURL}
-              width={520}
-              height={480}
-              alt={product.name}
-              // onLoad={() => setImageLoaded(true)}
-              style={{
-                objectFit: 'cover',
-                transition: 'opacity 0.5s ease',
-              }}
-            />
-            <footer>
-              <strong>{product.name}</strong>
-              <span>
-                {product.price !== null
-                  ? `R$ ${product.price}`
-                  : 'Preço não disponível'}
-              </span>
-            </footer>
-          </Product>
-        </Link>
-      ))}
-    </HomeContainer>
+    <>
+      <Head>
+        <title>Home | Ignite Shop</title>
+      </Head>
+      <HomeContainer ref={sliderRef} className="keen-slider">
+        {/* {!imageLoaded && (
+          <Skeleton
+            width={520}
+            height={655}
+            style={{
+              background: 'linear-gradient(100deg, #1ea483 0%, #7465d4 100%)',
+              borderRadius: '8px'
+            }}
+          />
+        )
+        } */}
+        {products.map((product) => (
+          <Link key={product.id} href={`/product/${product.id}`} prefetch={false}>
+            <Product className="keen-slider__slide">
+              <Image
+                src={product.imageURL}
+                width={520}
+                height={480}
+                alt={product.name}
+                // onLoad={() => setImageLoaded(true)}
+                style={{
+                  objectFit: 'cover',
+                  transition: 'opacity 0.5s ease',
+                }}
+              />
+              <footer>
+                <strong>{product.name}</strong>
+                <span>
+                  {product.price !== null
+                    ? `R$ ${product.price}`
+                    : 'Preço não disponível'}
+                </span>
+              </footer>
+            </Product>
+          </Link>
+        ))}
+      </HomeContainer>
+    </>
   );
 }
 
