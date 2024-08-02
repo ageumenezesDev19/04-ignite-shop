@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useState } from 'react';
+import axios from "axios";
 
 interface ProductProps {
   product: {
@@ -18,9 +19,28 @@ interface ProductProps {
 }
 
 export default function Product({ product }: ProductProps) {
+  const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  function handleBuyProduct() {
+  async function handleBuyProduct() {
+    try {
+      setIsCreatingCheckoutSession(true);
+
+      const response = await axios.post('/api/checkout', {
+        priceId: product.defaultPriceId
+      });
+
+      const { checkoutUrl } = response.data;
+
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      // Conectar com ferramenta de observabilidade (Datadog / Sentry)
+
+      setIsCreatingCheckoutSession(false);
+
+      alert('Falha ao redirecionar ao checkout');
+    }
+
     console.log(product.defaultPriceId);
   }
 
@@ -55,7 +75,7 @@ export default function Product({ product }: ProductProps) {
             : 'Preço não disponível'}
         </span>
         <p>{product.description}</p>
-        <button onClick={handleBuyProduct}>Comprar agora</button>
+        <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>Comprar agora</button>
       </ProductDetails>
     </ProductContainer>
   );
