@@ -5,23 +5,23 @@ import Stripe from "stripe";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useState } from 'react';
-import { useRouter } from "next/router";
 
 interface ProductProps {
   product: {
     id: string;
     name: string;
     imageURL: string;
-    price: string | null;
+    price: string;
     description: string;
+    defaultPriceId: string;
   }
 }
 
 export default function Product({ product }: ProductProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  if (!product) {
-    return <div>Produto não encontrado.</div>;
+  function handleBuyProduct() {
+    console.log(product.defaultPriceId);
   }
 
   return (
@@ -37,16 +37,14 @@ export default function Product({ product }: ProductProps) {
             }}
           />
         )}
-        <>
-          <img
-            src={product.imageURL}
-            width={520}
-            height={480}
-            alt={product.name}
-            onLoad={() => setImageLoaded(true)}
-            style={{ display: imageLoaded ? 'block' : 'none' }}
-          />
-        </>
+        <img
+          src={product.imageURL}
+          width={520}
+          height={480}
+          alt={product.name}
+          onLoad={() => setImageLoaded(true)}
+          style={{ display: imageLoaded ? 'block' : 'none' }}
+        />
       </ImageContainer>
 
       <ProductDetails>
@@ -57,7 +55,7 @@ export default function Product({ product }: ProductProps) {
             : 'Preço não disponível'}
         </span>
         <p>{product.description}</p>
-        <button>Comprar agora</button>
+        <button onClick={handleBuyProduct}>Comprar agora</button>
       </ProductDetails>
     </ProductContainer>
   );
@@ -101,6 +99,7 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ para
           imageURL,
           price: price.unit_amount !== null ? (price.unit_amount / 100).toFixed(2) : null,
           description: product.description ?? 'Descrição não disponível.',
+          defaultPriceId: price.id,
         }
       },
       revalidate: 60 * 60 * 1, // 1 hora
