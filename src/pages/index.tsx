@@ -1,11 +1,13 @@
 import { HomeContainer, Product } from "@/styles/pages/home";
 import { useKeenSlider } from 'keen-slider/react';
-import Image from "next/image";
 import 'keen-slider/keen-slider.min.css';
 import { stripe } from "@/lib/stripe";
 import { GetStaticProps } from "next";
 import Stripe from "stripe";
 import Link from "next/link";
+// import { useState } from "react";
+import Image from "next/image";
+// import Skeleton from "react-loading-skeleton";
 
 interface ProductsProps {
   products: {
@@ -24,16 +26,34 @@ export default function Home({ products }: ProductsProps) {
     }
   });
 
+  // const [imageLoaded, setImageLoaded] = useState(false);
+
   return (
     <HomeContainer ref={sliderRef} className="keen-slider">
-      {products.map(product => (
-        <Link key={product.id} href={`/product/${product.id}`}>
+      {/* {!imageLoaded && (
+        <Skeleton
+          width={520}
+          height={655}
+          style={{
+            background: 'linear-gradient(100deg, #1ea483 0%, #7465d4 100%)',
+            borderRadius: '8px'
+          }}
+        />
+      )
+      } */}
+      {products.map((product) => (
+        <Link key={product.id} href={`/product/${product.id}`} prefetch={false}>
           <Product className="keen-slider__slide">
             <Image
               src={product.imageURL}
               width={520}
               height={480}
               alt={product.name}
+              // onLoad={() => setImageLoaded(true)}
+              style={{
+                objectFit: 'cover',
+                transition: 'opacity 0.5s ease',
+              }}
             />
             <footer>
               <strong>{product.name}</strong>
@@ -51,7 +71,7 @@ export default function Home({ products }: ProductsProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const response  = await stripe.products.list({
+  const response = await stripe.products.list({
     expand: ['data.default_price']
   });
 
