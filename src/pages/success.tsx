@@ -37,7 +37,10 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
 
   if (!sessionID) {
     return {
-      notFound: true,
+      redirect: {
+        destination: '/',
+        permanent: false,
+      }
     };
   }
 
