@@ -2,6 +2,10 @@ import { stripe } from "@/lib/stripe";
 import { ImageContainer, ProductContainer, ProductDetails } from "@/styles/pages/product";
 import { GetStaticPaths, GetStaticProps } from "next";
 import Stripe from "stripe";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { useState } from 'react';
+import { useRouter } from "next/router";
 
 interface ProductProps {
   product: {
@@ -14,10 +18,35 @@ interface ProductProps {
 }
 
 export default function Product({ product }: ProductProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  if (!product) {
+    return <div>Produto não encontrado.</div>;
+  }
+
   return (
     <ProductContainer>
       <ImageContainer>
-        <img src={product.imageURL} width={520} height={480} alt={product.name} />
+        {!imageLoaded && (
+          <Skeleton
+            width={576}
+            height={656}
+            style={{
+              background: 'linear-gradient(100deg,#1ea483 0%, #7465d4 100%)',
+              borderRadius: '8px'
+            }}
+          />
+        )}
+        <>
+          <img
+            src={product.imageURL}
+            width={520}
+            height={480}
+            alt={product.name}
+            onLoad={() => setImageLoaded(true)}
+            style={{ display: imageLoaded ? 'block' : 'none' }}
+          />
+        </>
       </ImageContainer>
 
       <ProductDetails>
@@ -42,7 +71,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   return {
     paths,
-    fallback: 'blocking', // Use 'blocking' to wait for the page to be generated if it doesn't exist yet
+    fallback: true,
   };
 };
 
@@ -55,22 +84,31 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ para
 
   const productId = params.id;
 
-  const product = await stripe.products.retrieve(productId, {
-    expand: ['default_price'],
-  });
+  try {
+    const product = await stripe.products.retrieve(productId, {
+      expand: ['default_price'],
+    });
 
-  const price = product.default_price as Stripe.Price;
+    const price = product.default_price as Stripe.Price;
 
-  return {
-    props: {
-      product: {
-        id: product.id,
-        name: product.name,
-        imageURL: product.images[0] ?? '',
-        price: price.unit_amount !== null ? (price.unit_amount / 100).toFixed(2) : null,
-        description: product.description ?? 'Descrição não disponível.',
-      }
-    },
-    revalidate: 60 * 60 * 1, // 1 hour
-  };
+    const imageURL = product.images && product.images[0] ? product.images[0] : '';
+
+    return {
+      props: {
+        product: {
+          id: product.id,
+          name: product.name,
+          imageURL,
+          price: price.unit_amount !== null ? (price.unit_amount / 100).toFixed(2) : null,
+          description: product.description ?? 'Descrição não disponível.',
+        }
+      },
+      revalidate: 60 * 60 * 1, // 1 hora
+    };
+  } catch (error) {
+    console.error('Erro ao recuperar produto:', error);
+    return {
+      notFound: true,
+    };
+  }
 };
