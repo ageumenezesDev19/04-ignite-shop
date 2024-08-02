@@ -6,6 +6,7 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useState } from 'react';
 import axios from "axios";
+import Head from "next/head";
 
 interface ProductProps {
   product: {
@@ -45,39 +46,44 @@ export default function Product({ product }: ProductProps) {
   }
 
   return (
-    <ProductContainer>
-      <ImageContainer>
-        {!imageLoaded && (
-          <Skeleton
-            width={576}
-            height={656}
-            style={{
-              background: 'linear-gradient(100deg,#1ea483 0%, #7465d4 100%)',
-              borderRadius: '8px'
-            }}
+    <>
+      <Head>
+        <title>{product.name} | Ignite Shop</title>
+      </Head>
+      <ProductContainer>
+        <ImageContainer>
+          {!imageLoaded && (
+            <Skeleton
+              width={576}
+              height={656}
+              style={{
+                background: 'linear-gradient(100deg,#1ea483 0%, #7465d4 100%)',
+                borderRadius: '8px'
+              }}
+            />
+          )}
+          <img
+            src={product.imageURL}
+            width={520}
+            height={480}
+            alt={product.name}
+            onLoad={() => setImageLoaded(true)}
+            style={{ display: imageLoaded ? 'block' : 'none' }}
           />
-        )}
-        <img
-          src={product.imageURL}
-          width={520}
-          height={480}
-          alt={product.name}
-          onLoad={() => setImageLoaded(true)}
-          style={{ display: imageLoaded ? 'block' : 'none' }}
-        />
-      </ImageContainer>
+        </ImageContainer>
 
-      <ProductDetails>
-        <h1>{product.name}</h1>
-        <span>
-          {product.price !== null
-            ? `R$ ${product.price}`
-            : 'Preço não disponível'}
-        </span>
-        <p>{product.description}</p>
-        <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>Comprar agora</button>
-      </ProductDetails>
-    </ProductContainer>
+        <ProductDetails>
+          <h1>{product.name}</h1>
+          <span>
+            {product.price !== null
+              ? `R$ ${product.price}`
+              : 'Preço não disponível'}
+          </span>
+          <p>{product.description}</p>
+          <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>Comprar agora</button>
+        </ProductDetails>
+      </ProductContainer>
+    </>
   );
 }
 
