@@ -1,48 +1,41 @@
-import { stripe } from "@/lib/stripe";
-import { ImageContainer, ProductContainer, ProductDetails } from "@/styles/pages/product";
-import { GetStaticPaths, GetStaticProps } from "next";
-import Stripe from "stripe";
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
+import axios from 'axios';
+import { GetStaticPaths, GetStaticProps } from 'next';
+import Image from 'next/image';
+import Head from 'next/head';
 import { useState } from 'react';
-import axios from "axios";
-import Head from "next/head";
+import Stripe from 'stripe';
+import { stripe } from '../../lib/stripe';
+import { ImageContainer, ProductContainer, ProductDetails } from '../../styles/pages/product';
 
 interface ProductProps {
   product: {
     id: string;
     name: string;
-    imageURL: string;
+    imageUrl: string;
     price: string;
     description: string;
     defaultPriceId: string;
-  }
+  };
 }
 
 export default function Product({ product }: ProductProps) {
   const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
-  async function handleBuyProduct() {
+  async function handleBuyButton() {
     try {
       setIsCreatingCheckoutSession(true);
 
       const response = await axios.post('/api/checkout', {
-        priceId: product.defaultPriceId
+        priceId: product.defaultPriceId,
       });
 
       const { checkoutUrl } = response.data;
 
       window.location.href = checkoutUrl;
-    } catch (error) {
-      // Conectar com ferramenta de observabilidade (Datadog / Sentry)
-
+    } catch (err) {
       setIsCreatingCheckoutSession(false);
-
-      alert('Falha ao redirecionar ao checkout');
+      alert('Falha ao redirecionar ao checkout!');
     }
-
-    console.log(product.defaultPriceId);
   }
 
   return (
@@ -50,37 +43,20 @@ export default function Product({ product }: ProductProps) {
       <Head>
         <title>{product.name} | Ignite Shop</title>
       </Head>
+
       <ProductContainer>
         <ImageContainer>
-          {!imageLoaded && (
-            <Skeleton
-              width={576}
-              height={656}
-              style={{
-                background: 'linear-gradient(100deg,#1ea483 0%, #7465d4 100%)',
-                borderRadius: '8px'
-              }}
-            />
-          )}
-          <img
-            src={product.imageURL}
-            width={520}
-            height={480}
-            alt={product.name}
-            onLoad={() => setImageLoaded(true)}
-            style={{ display: imageLoaded ? 'block' : 'none' }}
-          />
+          <Image
+            src={product.imageUrl} width={520} height={480} alt={product.name} />
         </ImageContainer>
 
         <ProductDetails>
           <h1>{product.name}</h1>
-          <span>
-            {product.price !== null
-              ? `R$ ${product.price}`
-              : 'Preço não disponível'}
-          </span>
+          <span>{product.price}</span>
           <p>{product.description}</p>
-          <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>Comprar agora</button>
+          <button disabled={isCreatingCheckoutSession} onClick={handleBuyButton}>
+            Comprar agora
+          </button>
         </ProductDetails>
       </ProductContainer>
     </>
@@ -88,18 +64,27 @@ export default function Product({ product }: ProductProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const response = await stripe.products.list();
-  const paths = response.data.map(product => ({
-    params: { id: product.id }
-  }));
+  try {
+    const products = await stripe.products.list({ limit: 100 });
 
-  return {
-    paths,
-    fallback: true,
-  };
+    const paths = products.data.map((product) => ({
+      params: { id: product.id },
+    }));
+
+    return {
+      paths,
+      fallback: 'blocking', // 'true' ou 'blocking'
+    };
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
+    return {
+      paths: [],
+      fallback: 'blocking',
+    };
+  }
 };
 
-export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ params }) => {
+export const getStaticProps: GetStaticProps<ProductProps, { id: string }> = async ({ params }) => {
   if (!params?.id) {
     return {
       notFound: true,
@@ -122,11 +107,16 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ para
         product: {
           id: product.id,
           name: product.name,
-          imageURL,
-          price: price.unit_amount !== null ? (price.unit_amount / 100).toFixed(2) : null,
+          imageUrl: imageURL,
+          price: price.unit_amount !== null
+            ? new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(price.unit_amount / 100)
+            : 'Preço não disponível',
           description: product.description ?? 'Descrição não disponível.',
           defaultPriceId: price.id,
-        }
+        },
       },
       revalidate: 60 * 60 * 1, // 1 hora
     };

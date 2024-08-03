@@ -19,7 +19,6 @@
     "react-loading-skeleton": "^3.4.0",
     "sharp": "^0.33.4",
     "skeleton": "^0.1.2",
-    "skeleton-elements": "^4.0.1",
     "stripe": "^16.5.0"
   },
   "devDependencies": {
